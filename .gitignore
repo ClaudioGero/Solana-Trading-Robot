@@ -1,0 +1,40 @@
+.DS_Store
+node_modules/
+dist/
+target/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.coverage
+coverage/
+.venv/
+venv/
+*.swp
+*.swo
+*.pid
+*.rdb
+*.sqlite
+*.sqlite3
+*.db
+
+# env / secrets
+.env
+.env.*
+!.env.example
+local_secret/
+**/*.keypair.json
+**/keypairs/
+**/*.key
+**/*.pem
+
+# logs
+*.log
+logs/
+
+# runtime lock files
+integrations/telegram_tracker/telegram_listener.lock
+integrations/telegram_tracker/channels_config.json
+
+# DB
+postgres-data/

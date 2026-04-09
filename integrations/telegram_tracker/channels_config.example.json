@@ -1,0 +1,29 @@
+{
+  "bot_token": "",
+  "control_chat_id": "",
+  "monitored_channels": [],
+  "filters": {
+    "min_message_length": 10,
+    "exclude_keywords": [],
+    "include_keywords": [],
+    "require_solana_address": true
+  },
+  "notification_settings": {
+    "send_to_control_chat": true,
+    "send_to_executor": true,
+    "log_all_messages": false,
+    "notification_format": "html"
+  },
+  "bot_settings": {
+    "webhook_enabled": false,
+    "polling_interval": 1,
+    "max_retries": 3,
+    "timeout": 30
+  },
+  "logging": {
+    "level": "INFO",
+    "file_path": "logs/telegram_bot.log",
+    "max_file_size": "10MB",
+    "backup_count": 5
+  }
+}

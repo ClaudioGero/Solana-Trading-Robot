@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "mode": {
+    "dry_run": true,
+    "simulate_only": true
+  },
+  "copytrade": {
+    "fixed_buy_sol": 0.1
+  },
+  "exits": {
+    "mode": "basic",
+    "basic": {
+      "take_profit_pct": 10.0,
+      "stop_loss_pct": 10.0,
+      "sell_percent_on_take_profit": 100.0,
+      "sell_percent_on_stop_loss": 100.0
+    }
+  },
+  "risk": {
+    "max_concurrent_positions_global": null,
+    "max_concurrent_positions_per_wallet": null
+  },
+  "filters": {
+    "enabled": true,
+    "only_buys": true,
+    "allowed_venues": ["jupiter", "unknown"],
+    "min_notional_sol": 0.1,
+    "min_market_cap_usd": null,
+    "max_market_cap_usd": null
+  },
+  "executor": {
+    "enabled": false,
+    "slippage_bps": 500,
+    "wrap_and_unwrap_sol": true,
+    "user_public_key_env": "USER_PUBLIC_KEY",
+    "min_sell_token_ui": 0.00001,
+    "sell_dust_alert_ttl_seconds": 600
+  },
+  "providers": {
+    "rpc": {
+      "primary": "https://api.mainnet-beta.solana.com",
+      "ws": "wss://api.mainnet-beta.solana.com"
+    },
+    "jupiter": {
+      "base_url": "https://api.jup.ag"
+    },
+    "jito": {
+      "enabled": false,
+      "max_tip_sol": 0.0,
+      "max_priority_fee_sol": 0.0
+    }
+  }
+}

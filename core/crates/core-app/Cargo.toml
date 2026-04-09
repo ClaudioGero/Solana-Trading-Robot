@@ -1,0 +1,26 @@
+[package]
+name = "core-app"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+dotenvy.workspace = true
+serde.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+url.workspace = true
+
+common = { path = "../common" }
+state = { path = "../state" }
+db = { path = "../db" }
+stream = { path = "../stream" }
+classify = { path = "../classify" }
+filters = { path = "../filters" }
+executor = { path = "../executor" }
+exits = { path = "../exits" }
+alerts = { path = "../alerts" }
+
+
