@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Channels Config - Módulo para carregar e gerenciar configurações dos canais
+Channels Config - Module for loading and managing channel configuration
 """
 
 import json
@@ -28,62 +28,62 @@ def _resolve_config_path(config_path: str) -> Path:
 
 def load_channels_config(config_path: str = "channels_config.json") -> Dict:
     """
-    Carrega a configuração dos canais do arquivo JSON
+    Load channel configuration from the JSON file.
 
     Args:
-        config_path: Caminho para o arquivo de configuração
+        config_path: Path to the configuration file
 
     Returns:
-        Dicionário com as configurações carregadas
+        Dictionary containing the loaded configuration
     """
     try:
         config_file = _resolve_config_path(config_path)
 
         if not config_file.exists():
-            logger.error(f"Arquivo de configuração não encontrado: {config_path}")
+            logger.error(f"Configuration file not found: {config_path}")
             return _get_default_config()
 
         with open(config_file, "r", encoding="utf-8") as f:
             config = json.load(f)
 
-        # Valida configuração básica
+        # Validate basic configuration
         if not _validate_config(config):
-            logger.warning("Configuração inválida, usando configuração padrão")
+            logger.warning("Invalid configuration, using default configuration")
             return _get_default_config()
 
-        logger.info(f"Configuração carregada com sucesso: {config_path}")
+        logger.info(f"Configuration loaded successfully: {config_path}")
         return config
 
     except Exception as e:
-        logger.error(f"Erro ao carregar configuração: {e}")
+        logger.error(f"Error loading configuration: {e}")
         return _get_default_config()
 
 
 def _validate_config(config: Dict) -> bool:
     """
-    Valida se a configuração está correta
+    Validate whether the configuration is correct.
 
     Args:
-        config: Configuração para validar
+        config: Configuration to validate
 
     Returns:
-        True se a configuração é válida
+        True if the configuration is valid
     """
     required_fields = ["bot_token", "control_chat_id", "monitored_channels"]
 
     for field in required_fields:
         if field not in config:
-            logger.error(f"Campo obrigatório ausente: {field}")
+            logger.error(f"Missing required field: {field}")
             return False
 
-    # Verifica se o bot token não é o padrão
+    # Check that the bot token is not still the placeholder
     if config["bot_token"] == "YOUR_BOT_TOKEN_HERE":
-        logger.error("Bot token não configurado")
+        logger.error("Bot token not configured")
         return False
 
-    # Verifica se o chat ID não é o padrão
+    # Check that the control chat ID is not still the placeholder
     if config["control_chat_id"] == "YOUR_CONTROL_CHAT_ID_HERE":
-        logger.error("Chat ID de controle não configurado")
+        logger.error("Control chat ID not configured")
         return False
 
     return True
@@ -91,10 +91,10 @@ def _validate_config(config: Dict) -> bool:
 
 def _get_default_config() -> Dict:
     """
-    Retorna configuração padrão
+    Return the default configuration.
 
     Returns:
-        Configuração padrão
+        Default configuration
     """
     return {
         "bot_token": "YOUR_BOT_TOKEN_HERE",
@@ -122,13 +122,13 @@ def _get_default_config() -> Dict:
 
 def get_monitored_channels(config: Dict) -> List[Dict]:
     """
-    Obtém lista de canais monitorados
+    Get the list of monitored channels.
 
     Args:
-        config: Configuração carregada
+        config: Loaded configuration
 
     Returns:
-        Lista de canais monitorados
+        List of monitored channels
     """
     channels = config.get("monitored_channels", [])
     return [channel for channel in channels if channel.get("enabled", True)]
@@ -136,14 +136,14 @@ def get_monitored_channels(config: Dict) -> List[Dict]:
 
 def get_channel_by_id(config: Dict, channel_id: int) -> Optional[Dict]:
     """
-    Obtém canal por ID
+    Get a channel by ID.
 
     Args:
-        config: Configuração carregada
-        channel_id: ID do canal
+        config: Loaded configuration
+        channel_id: Channel ID
 
     Returns:
-        Dados do canal ou None
+        Channel data or None
     """
     channels = get_monitored_channels(config)
 
@@ -156,14 +156,14 @@ def get_channel_by_id(config: Dict, channel_id: int) -> Optional[Dict]:
 
 def get_channel_by_name(config: Dict, channel_name: str) -> Optional[Dict]:
     """
-    Obtém canal por nome
+    Get a channel by name.
 
     Args:
-        config: Configuração carregada
-        channel_name: Nome do canal
+        config: Loaded configuration
+        channel_name: Channel name
 
     Returns:
-        Dados do canal ou None
+        Channel data or None
     """
     channels = get_monitored_channels(config)
 
@@ -176,22 +176,22 @@ def get_channel_by_name(config: Dict, channel_name: str) -> Optional[Dict]:
 
 def should_monitor_channel(config: Dict, channel_id: int, channel_name: str) -> bool:
     """
-    Verifica se um canal deve ser monitorado
+    Check whether a channel should be monitored.
 
     Args:
-        config: Configuração carregada
-        channel_id: ID do canal
-        channel_name: Nome do canal
+        config: Loaded configuration
+        channel_id: Channel ID
+        channel_name: Channel name
 
     Returns:
-        True se o canal deve ser monitorado
+        True if the channel should be monitored
     """
-    # Verifica por ID
+    # Check by ID
     channel = get_channel_by_id(config, channel_id)
     if channel:
         return True
 
-    # Verifica por nome
+    # Check by name
     channel = get_channel_by_name(config, channel_name)
     if channel:
         return True
@@ -201,55 +201,38 @@ def should_monitor_channel(config: Dict, channel_id: int, channel_name: str) -> 
 
 def get_filters(config: Dict) -> Dict:
     """
-    Obtém filtros de mensagens
+    Get message filters.
 
     Args:
-        config: Configuração carregada
+        config: Loaded configuration
 
     Returns:
-        Filtros configurados
+        Configured filters
     """
     return config.get("filters", {})
 
 
 def get_notification_settings(config: Dict) -> Dict:
     """
-    Obtém configurações de notificação
+    Get notification settings.
 
     Args:
-        config: Configuração carregada
+        config: Loaded configuration
 
     Returns:
-        Configurações de notificação
+        Notification settings
     """
     return config.get("notification_settings", {})
 
 
 def get_bot_settings(config: Dict) -> Dict:
     """
-    Obtém configurações do bot
+    Get bot settings.
 
     Args:
-        config: Configuração carregada
+        config: Loaded configuration
 
     Returns:
-        Configurações do bot
+        Bot settings
     """
     return config.get("bot_settings", {})
-
-
-# Função de teste
-def test_config():
-    """Testa o carregamento da configuração"""
-    config = load_channels_config()
-
-    print("Configuração carregada:")
-    print(f"- Bot Token: {config['bot_token']}")
-    print(f"- Control Chat ID: {config['control_chat_id']}")
-    print(f"- Canais monitorados: {len(get_monitored_channels(config))}")
-    print(f"- Filtros: {get_filters(config)}")
-
-
-if __name__ == "__main__":
-    test_config()
-

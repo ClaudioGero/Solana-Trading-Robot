@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Token Detector - Detecta endereços de tokens Solana de forma simples
-Lógica: Se uma palavra tem 32-44 caracteres, provavelmente é um token!
+Token Detector - Detects Solana token addresses in a simple way
+Logic: If a word has 32-44 characters, it is probably a token
 """
 
 import re
@@ -14,10 +14,10 @@ logger = logging.getLogger(__name__)
 
 class TokenDetector:
     def __init__(self, config_path: str = "channels_config.json"):
-        # Caracteres válidos para endereços Solana (base58)
+        # Valid characters for Solana addresses (base58)
         self.valid_chars = r"[1-9A-HJ-NP-Za-km-z]"
 
-        # Lista básica de endereços do sistema para filtrar
+        # Basic list of system addresses to filter out
         self.system_addresses = {
             "11111111111111111111111111111111",  # System Program
             "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",  # Token Program
@@ -28,57 +28,57 @@ class TokenDetector:
 
     def extract_tokens(self, message_text: str) -> List[str]:
         """
-        Extrai tokens usando lógica super simples:
-        Qualquer símbolo = separador → Procura sequências de 32-44 caracteres base58
+        Extract tokens using a very simple approach:
+        Any symbol = separator -> look for base58 sequences with 32-44 characters
 
         Args:
-            message_text: Texto da mensagem do Telegram
+            message_text: Telegram message text
 
         Returns:
-            Lista de endereços de tokens encontrados
+            List of found token addresses
         """
         try:
-            # Encontra TODAS as sequências de caracteres base58 de 32-44 chars
-            # Qualquer coisa que não seja base58 = separador automático
+            # Find ALL base58 character sequences of 32-44 chars
+            # Anything that is not base58 becomes an automatic separator
             pattern = r"[1-9A-HJ-NP-Za-km-z]{32,44}"
             potential_tokens = re.findall(pattern, message_text)
 
             tokens_found = []
 
             for token in potential_tokens:
-                # Filtra endereços do sistema
+                # Filter out system addresses
                 if token not in self.system_addresses:
-                    # Evita duplicatas
+                    # Avoid duplicates
                     if token not in tokens_found:
-                        # Validação final com base58
+                        # Final validation with base58
                         if self._is_valid_format(token):
                             tokens_found.append(token)
-                            logger.info(f"Token encontrado: {token}")
+                            logger.info(f"Token found: {token}")
 
             return tokens_found
 
         except Exception as e:
-            logger.error(f"Erro ao extrair tokens: {e}")
+            logger.error(f"Error extracting tokens: {e}")
             return []
 
     def _is_valid_format(self, address: str) -> bool:
         """
-        Verifica se uma string tem formato válido de endereço Solana
+        Check whether a string has a valid Solana address format.
 
         Args:
-            address: String para verificar
+            address: String to check
 
         Returns:
-            True se tem formato válido
+            True if the format is valid
         """
         try:
-            # Verifica se contém apenas caracteres válidos para base58
+            # Check that it contains only valid base58 characters
             if not re.match(f"^{self.valid_chars}+$", address):
                 return False
 
-            # Tenta decodificar como base58 (validação final)
+            # Try decoding as base58 (final validation)
             decoded = b58decode(address)
-            if len(decoded) != 32:  # Endereços Solana são 32 bytes
+            if len(decoded) != 32:  # Solana addresses are 32 bytes
                 return False
 
             return True
@@ -94,16 +94,16 @@ class TokenDetector:
         message_date: str = "",
     ) -> List[Dict]:
         """
-        Extrai tokens e retorna dados prontos para processamento
+        Extract tokens and return data ready for processing.
 
         Args:
-            message_text: Texto da mensagem do Telegram
-            channel_name: Nome do canal
-            original_message: Mensagem original completa
-            message_date: Data da mensagem
+            message_text: Telegram message text
+            channel_name: Channel name
+            original_message: Full original message
+            message_date: Message date
 
         Returns:
-            Lista de dicionários com dados dos tokens
+            List of dictionaries with token data
         """
         tokens = self.extract_tokens(message_text)
 
@@ -116,9 +116,8 @@ class TokenDetector:
                 "detected_at": message_date,
                 "source": "telegram",
                 "detection_method": "word_length",
-                "confidence": 0.95,  # Alta confiança para este método simples
+                "confidence": 0.95,  # High confidence for this simple method
             }
             processed_tokens.append(token_data)
 
         return processed_tokens
-

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Telegram Listener - Monitor principal para canais do Telegram
-Monitora canais específicos e detecta endereços de tokens Solana
+Telegram Listener - Main monitor for Telegram channels
+Monitors specific channels and detects Solana token addresses
 
 Integration note (Solana bot):
 - When a token/mint is detected, we enqueue a TradeIntent JSON into Redis:
@@ -37,7 +37,7 @@ _BASE_DIR = Path(__file__).resolve().parent
 # Ensure log directory exists (avoids FileHandler crash on first run).
 (_BASE_DIR / "logs").mkdir(parents=True, exist_ok=True)
 
-# Configuração de logging
+# Logging configuration
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO,
@@ -120,7 +120,7 @@ class TelegramListener:
 
     def run_polling(self):
         """
-        Inicia o listener do Telegram via Application.run_polling().
+        Start the Telegram listener via Application.run_polling().
 
         PTB 20+ (incl. 22.x) removed Updater.idle()/wait_until_closed(). The supported
         long-running entrypoint is Application.run_polling(), which also supports
@@ -136,7 +136,7 @@ class TelegramListener:
             if chat_type_channel is None:
                 chat_type_channel = getattr(filters.ChatType, "CHANNELS", None)
             if chat_type_channel is None:
-                # Fallback: don't filter by chat type (still requires TEXT).
+                # Fallback: do not filter by chat type (still requires TEXT).
                 chat_type_channel = filters.ALL
 
             self.application.add_handler(
@@ -144,17 +144,17 @@ class TelegramListener:
                 MessageHandler((filters.TEXT | filters.CAPTION) & chat_type_channel, self.handle_message)
             )
 
-            logger.info("Telegram Listener iniciado com sucesso (run_polling)")
+            logger.info("Telegram Listener started successfully (run_polling)")
             self.application.run_polling()
 
         except Exception as e:
-            logger.error(f"Erro ao iniciar Telegram Listener: {e}")
+            logger.error(f"Error starting Telegram Listener: {e}")
             raise
 
     async def start_listening_async(self):
-        """Inicia o listener do Telegram (fallback para versões antigas do PTB)"""
+        """Start the Telegram listener (fallback for older PTB versions)."""
         try:
-            # Inicializa a aplicação do Telegram
+            # Initialize the Telegram application
             self.application = Application.builder().token(self.config["bot_token"]).build()
 
             # PTB compatibility: some versions use ChatType.CHANNEL (singular), others differ.
@@ -162,22 +162,22 @@ class TelegramListener:
             if chat_type_channel is None:
                 chat_type_channel = getattr(filters.ChatType, "CHANNELS", None)
             if chat_type_channel is None:
-                # Fallback: don't filter by chat type (still requires TEXT).
+                # Fallback: do not filter by chat type (still requires TEXT).
                 chat_type_channel = filters.ALL
 
-            # Adiciona handler para mensagens
+            # Add handler for messages
             self.application.add_handler(
                 MessageHandler((filters.TEXT | filters.CAPTION) & chat_type_channel, self.handle_message)
             )
 
-            # Inicia o bot
+            # Start the bot
             await self.application.initialize()
             await self.application.start()
             await self.application.updater.start_polling()
 
-            logger.info("Telegram Listener iniciado com sucesso")
+            logger.info("Telegram Listener started successfully")
 
-            # Mantém o bot rodando (PTB < 20 had updater.idle()).
+            # Keep the bot running (PTB < 20 had updater.idle()).
             if hasattr(self.application.updater, "idle"):
                 await self.application.updater.idle()
             else:
@@ -185,11 +185,11 @@ class TelegramListener:
                 await asyncio.Event().wait()
 
         except Exception as e:
-            logger.error(f"Erro ao iniciar Telegram Listener: {e}")
+            logger.error(f"Error starting Telegram Listener: {e}")
             raise
 
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Processa mensagens recebidas dos canais monitorados"""
+        """Process messages received from monitored channels."""
         try:
             # PTB can deliver channel posts via channel_post; effective_message covers both.
             message = update.effective_message
@@ -207,14 +207,14 @@ class TelegramListener:
             message_date = message.date
             message_id = getattr(message, "message_id", None)
 
-            # Verifica se o canal está na lista de monitoramento
+            # Check whether the channel is in the monitored list
             if not self._should_monitor_channel(chat_id, chat_title, chat_username):
                 return
 
-            logger.info(f"Mensagem recebida do canal: {chat_title} (ID: {chat_id})")
-            logger.debug(f"Conteúdo: {message_text[:100]}...")
+            logger.info(f"Message received from channel: {chat_title} (ID: {chat_id})")
+            logger.debug(f"Content: {message_text[:100]}...")
 
-            # Extrai e processa tokens em uma única operação
+            # Extract and process tokens in a single operation
             processed_tokens = self.token_detector.extract_and_process_tokens(
                 message_text=message_text,
                 channel_name=chat_title,
@@ -223,9 +223,9 @@ class TelegramListener:
             )
 
             if processed_tokens:
-                logger.info(f"Tokens encontrados em {chat_title}: {len(processed_tokens)} tokens")
+                logger.info(f"Tokens found in {chat_title}: {len(processed_tokens)} tokens")
 
-                # Processa cada token encontrado
+                # Process each detected token
                 for token_data in processed_tokens:
                     # Attach Telegram metadata for idempotent signatures + audit.
                     token_data["tg_chat_id"] = chat_id
@@ -234,65 +234,65 @@ class TelegramListener:
                     await self._process_token_data(token_data)
 
         except Exception as e:
-            logger.error(f"Erro ao processar mensagem: {e}")
+            logger.error(f"Error processing message: {e}")
 
     def _should_monitor_channel(self, chat_id: int, chat_title: str, chat_username: str = "") -> bool:
-        """Verifica se o canal deve ser monitorado"""
-        # Se não há canais configurados, monitora todos (modo desenvolvimento)
+        """Check whether the channel should be monitored."""
+        # If no channels are configured, monitor all of them (development mode)
         if not self.config.get("monitored_channels"):
-            logger.info(f"Modo desenvolvimento: monitorando canal {chat_title}")
+            logger.info(f"Development mode: monitoring channel {chat_title}")
             return True
 
-        # Verifica por ID do chat, username ou nome
+        # Check by chat ID, username, or name
         for channel in self.config["monitored_channels"]:
             if isinstance(channel, dict):
-                # Verifica se está habilitado
+                # Check whether it is enabled
                 if not channel.get("enabled", True):
                     continue
 
-                # Verifica ID (se disponível)
+                # Check ID (if available)
                 if "id" in channel and channel["id"] == chat_id:
-                    logger.info(f"✅ Canal monitorado por ID: {chat_title}")
+                    logger.info(f"✅ Channel monitored by ID: {chat_title}")
                     return True
 
-                # Verifica username (sem @)
+                # Check username (without @)
                 if "username" in channel:
                     cfg_username = channel["username"].lstrip("@").lower()
                     actual_username = (chat_username or "").lstrip("@").lower()
                     if actual_username and cfg_username == actual_username:
-                        logger.info(f"✅ Canal monitorado por username: @{actual_username}")
+                        logger.info(f"✅ Channel monitored by username: @{actual_username}")
                         return True
 
-                # Verifica nome exato
+                # Check exact name
                 if "name" in channel and channel["name"] == chat_title:
-                    logger.info(f"✅ Canal monitorado por nome: {chat_title}")
+                    logger.info(f"✅ Channel monitored by name: {chat_title}")
                     return True
 
-            elif channel == chat_id:  # Compatibilidade com IDs simples
-                logger.info(f"✅ Canal monitorado por ID simples: {chat_title}")
+            elif channel == chat_id:  # Compatibility with plain IDs
+                logger.info(f"✅ Channel monitored by plain ID: {chat_title}")
                 return True
 
-        logger.debug(f"❌ Canal não monitorado: {chat_title} (ID: {chat_id})")
+        logger.debug(f"❌ Channel not monitored: {chat_title} (ID: {chat_id})")
         return False
 
     async def _process_token_data(self, token_data: Dict):
-        """Processa dados de um token já extraído e validado"""
+        """Process data for a token that was already extracted and validated."""
         try:
-            # Envia para o executor (via Redis)
+            # Send to the executor (via Redis)
             await self._send_to_executor(token_data)
 
-            # Envia notificação para o chat de controle
+            # Send a notification to the control chat
             await self.telegram_bot.send_token_notification(token_data)
 
-            logger.info(f"Token processado com sucesso: {token_data['token_address']}")
+            logger.info(f"Token processed successfully: {token_data['token_address']}")
 
         except Exception as e:
             logger.error(
-                f"Erro ao processar token {token_data.get('token_address', 'unknown')}: {e}"
+                f"Error processing token {token_data.get('token_address', 'unknown')}: {e}"
             )
 
     async def _send_to_executor(self, token_data: Dict):
-        """Envia o mint detectado para o bot via Redis (sb:q:trade_intents)."""
+        """Send the detected mint to the bot via Redis (sb:q:trade_intents)."""
         try:
             redis_url = os.environ.get("REDIS_URL", "redis://127.0.0.1:6379")
             now = datetime.now(timezone.utc).isoformat()
@@ -341,11 +341,11 @@ class TelegramListener:
                 pass
 
         except Exception as e:
-            logger.error(f"Erro ao enviar para executor (Redis): {e}")
+            logger.error(f"Error sending to executor (Redis): {e}")
 
 
 async def main():
-    """Função principal"""
+    """Main function."""
     listener = TelegramListener()
     await listener.start_listening_async()
 
